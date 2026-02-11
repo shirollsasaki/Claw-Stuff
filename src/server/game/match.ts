@@ -457,7 +457,7 @@ export class MatchManager {
       const now = Date.now();
       const delay = playerCountAfterJoin >= INSTANT_START_PLAYER_COUNT ? 0 : EFFECTIVE_LOBBY_DURATION;
       this.currentMatchStartTime = now + delay;
-      this.nextMatchStartTime = this.currentMatchStartTime + MATCH_DURATION + RESULTS_DURATION + EFFECTIVE_LOBBY_DURATION;
+      this.nextMatchStartTime = this.currentMatchStartTime + MATCH_DURATION + RESULTS_DURATION;
 
       if (this.lobbyStartTimeout) {
         clearTimeout(this.lobbyStartTimeout);
