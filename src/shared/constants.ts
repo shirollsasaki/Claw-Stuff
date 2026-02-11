@@ -24,9 +24,10 @@ export const SELF_COLLISION_SKIP = 5; // Skip this many segments when checking s
 // Match settings
 export const MATCH_DURATION = 4 * 60 * 1000; // 4 minutes in ms
 export const LOBBY_DURATION = 90 * 1000; // 1.5 minute lobby before match
-export const RESULTS_DURATION = 10 * 1000; // 10 seconds to show results
+export const RESULTS_DURATION = 60 * 1000; // 60 seconds to show results
 export const MATCH_INTERVAL = 5 * 60 * 1000; // New match every 5 minutes
 export const MAX_PLAYERS = 10;
+export const INSTANT_START_PLAYER_COUNT = 6; // Start immediately when this many players join
 
 // Game loop
 export const TICK_RATE = 20; // Ticks per second

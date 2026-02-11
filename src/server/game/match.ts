@@ -9,6 +9,7 @@ import {
   MATCH_INTERVAL,
   MAX_PLAYERS,
   TICK_INTERVAL,
+  INSTANT_START_PLAYER_COUNT,
 } from '../../shared/constants.js';
 import * as bettingService from '../betting/service.js';
 import { config } from '../config.js';
@@ -417,7 +418,8 @@ export class MatchManager {
     }
 
     const wasFirst = match.snakes.size === 0;
-    const isSecond = match.snakes.size === 1; // after we add this player we'll have 2
+    const isSecond = match.snakes.size === 1;
+    const playerCountAfterJoin = match.snakes.size + 1;
 
     // Create player
     const playerId = `player_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -450,16 +452,17 @@ export class MatchManager {
     };
     this.players.set(playerId, player);
 
-    // Start countdown when the second bot joins.
-    if (isSecond) {
+    // Start countdown when the second bot joins, or start immediately when 6 players join
+    if (isSecond || playerCountAfterJoin === INSTANT_START_PLAYER_COUNT) {
       const now = Date.now();
-      this.currentMatchStartTime = now + EFFECTIVE_LOBBY_DURATION;
+      const delay = playerCountAfterJoin >= INSTANT_START_PLAYER_COUNT ? 0 : EFFECTIVE_LOBBY_DURATION;
+      this.currentMatchStartTime = now + delay;
       this.nextMatchStartTime = this.currentMatchStartTime + MATCH_DURATION + RESULTS_DURATION + EFFECTIVE_LOBBY_DURATION;
 
       if (this.lobbyStartTimeout) {
         clearTimeout(this.lobbyStartTimeout);
       }
-      this.lobbyStartTimeout = setTimeout(() => this.startMatch(), EFFECTIVE_LOBBY_DURATION);
+      this.lobbyStartTimeout = setTimeout(() => this.startMatch(), delay);
 
       // Close betting 10s before match starts so late bets have time to mine
       const BETTING_CLOSE_BUFFER = 10_000; // 10 seconds
