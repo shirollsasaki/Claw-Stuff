@@ -629,8 +629,8 @@ export class MatchManager {
         : null,
       nextMatch: {
         id: `match_${this.nextMatchId}`,
-        // When current match is in lobby with no players, we don't know when next match will open
-        lobbyOpensAt: hasNextMatchTimes ? this.nextMatchStartTime - EFFECTIVE_LOBBY_DURATION : 0,
+        // Lobby opens after RESULTS_DURATION (60s), then match starts immediately (instant start) or after 90s lobby
+        lobbyOpensAt: hasNextMatchTimes ? this.currentMatchStartTime + MATCH_DURATION + RESULTS_DURATION : 0,
         startsAt: hasNextMatchTimes ? this.nextMatchStartTime : 0,
       },
     };
