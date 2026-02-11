@@ -155,6 +155,7 @@ httpServer.listen(PORT, () => {
   });
 
   // Auto-spawn house bots if RUN_HOUSE_BOTS=true
+  console.log(`[house-bots] RUN_HOUSE_BOTS env var: "${process.env.RUN_HOUSE_BOTS}" (type: ${typeof process.env.RUN_HOUSE_BOTS})`);
   if (process.env.RUN_HOUSE_BOTS === 'true') {
     import('child_process').then(({ spawn }) => {
       console.log('[house-bots] Starting house bots process...');
@@ -172,6 +173,8 @@ httpServer.listen(PORT, () => {
         console.log(`[house-bots] Process exited with code ${code}`);
       });
     });
+  } else {
+    console.log('[house-bots] NOT starting (RUN_HOUSE_BOTS is not "true")');
   }
 });
 
