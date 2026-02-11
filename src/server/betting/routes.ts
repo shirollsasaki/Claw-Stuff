@@ -3,14 +3,22 @@
  * Mounted at /api/betting
  */
 import { Router, Request, Response } from 'express';
-import { verifyMoltbookAgent, createTestAgent } from '../api/auth.js';
+import { verifyAgentApiKey, createTestAgent } from '../api/auth.js';
 import * as bettingService from './service.js';
 import { getContractAddress, getContractABI, getChainInfo, isConfigured } from './contract.js';
+import { config } from '../config.js';
 
 const DEV_MODE = process.env.NODE_ENV !== 'production';
 
 export function createBettingRoutes(): Router {
   const router = Router();
+  const ensureBettingEnabled = (res: Response): boolean => {
+    if (!config.bettingEnabled) {
+      res.status(503).json({ error: 'Betting is temporarily disabled' });
+      return false;
+    }
+    return true;
+  };
 
   // ── Helper: extract API key ──────────────────────────────────────────
   const extractApiKey = (req: Request): string | null => {
@@ -30,10 +38,10 @@ export function createBettingRoutes(): Router {
     if (DEV_MODE && apiKey.startsWith('test_')) {
       agentInfo = createTestAgent(apiKey.replace('test_', ''));
     } else {
-      agentInfo = await verifyMoltbookAgent(apiKey);
+      agentInfo = await verifyAgentApiKey(apiKey);
     }
     if (!agentInfo) {
-      res.status(401).json({ success: false, error: 'INVALID_API_KEY', message: 'Invalid Moltbook API key' });
+      res.status(401).json({ success: false, error: 'INVALID_API_KEY', message: 'Invalid Builder Arena API key' });
       return null;
     }
     // Attach the apiKey we authenticated with so downstream logic can
@@ -44,6 +52,7 @@ export function createBettingRoutes(): Router {
   // ── GET /api/betting/contract-info ───────────────────────────────────
   // No auth. Returns contract address, ABI, chain info, Reown project ID for wallet modal.
   router.get('/contract-info', (_req: Request, res: Response) => {
+    if (!ensureBettingEnabled(res)) return;
     res.json({
       configured: isConfigured(),
       contractAddress: getContractAddress(),
@@ -56,6 +65,7 @@ export function createBettingRoutes(): Router {
   // ── GET /api/betting/status/:matchId ─────────────────────────────────
   // No auth. Live odds, pool sizes, bettor counts.
   router.get('/status/:matchId', async (req: Request, res: Response) => {
+    if (!ensureBettingEnabled(res)) return;
     try {
       const token = req.query.token === 'MCLAW' ? 'MCLAW' : 'MON';
       const status = await bettingService.getBettingStatus(req.params.matchId, token);
@@ -69,6 +79,7 @@ export function createBettingRoutes(): Router {
   // ── POST /api/betting/register-wallet ────────────────────────────────
   // Agent auth required. { walletAddress }
   router.post('/register-wallet', async (req: Request, res: Response) => {
+    if (!ensureBettingEnabled(res)) return;
     const agent = await authenticateAgent(req, res);
     if (!agent) return;
 
@@ -97,6 +108,7 @@ export function createBettingRoutes(): Router {
   //
   // amount is in wei (string) or MON (number — converted to wei).
   router.post('/place-bet-direct', async (req: Request, res: Response) => {
+    if (!ensureBettingEnabled(res)) return;
     const agent = await authenticateAgent(req, res);
     if (!agent) return;
 
@@ -111,7 +123,7 @@ export function createBettingRoutes(): Router {
     }
 
     // Get agent's registered wallet address (the one that paid for the tx),
-    // using both name and Moltbook API key to uniquely identify the agent.
+    // using both name and API key to uniquely identify the agent.
     const walletAddress = await bettingService.getAgentWallet(agent.name, agent.apiKey);
     if (!walletAddress) {
       res.status(400).json({
@@ -159,6 +171,7 @@ export function createBettingRoutes(): Router {
   // ── POST /api/betting/claim ──────────────────────────────────────────
   // Agent auth required. { matchId }
   router.post('/claim', async (req: Request, res: Response) => {
+    if (!ensureBettingEnabled(res)) return;
     const agent = await authenticateAgent(req, res);
     if (!agent) return;
 
@@ -191,6 +204,7 @@ export function createBettingRoutes(): Router {
   // ── GET /api/betting/my-bets ─────────────────────────────────────────
   // Agent auth required. Optional ?matchId=
   router.get('/my-bets', async (req: Request, res: Response) => {
+    if (!ensureBettingEnabled(res)) return;
     const agent = await authenticateAgent(req, res);
     if (!agent) return;
 
@@ -209,6 +223,7 @@ export function createBettingRoutes(): Router {
   // ── GET /api/betting/history/:matchId ────────────────────────────────
   // No auth. All bets + settlements for a match.
   router.get('/history/:matchId', async (req: Request, res: Response) => {
+    if (!ensureBettingEnabled(res)) return;
     try {
       const history = await bettingService.getMatchHistory(req.params.matchId);
       res.json(history);
@@ -221,6 +236,7 @@ export function createBettingRoutes(): Router {
   // ── GET /api/betting/bets-by-wallet/:address ────────────────────────
   // No auth. Returns all bets for a wallet address, optionally filtered by matchId.
   router.get('/bets-by-wallet/:address', async (req: Request, res: Response) => {
+    if (!ensureBettingEnabled(res)) return;
     const address = req.params.address;
     if (!address || !/^0x[a-fA-F0-9]{40}$/.test(address)) {
       res.status(400).json({ success: false, error: 'INVALID_ADDRESS' });
@@ -243,6 +259,7 @@ export function createBettingRoutes(): Router {
   // ── GET /api/betting/leaderboard ─────────────────────────────────────
   // No auth. Top bettors by volume.
   router.get('/leaderboard', async (req: Request, res: Response) => {
+    if (!ensureBettingEnabled(res)) return;
     try {
       const token = req.query.token === 'MCLAW' ? 'MCLAW' : 'MON';
       const leaderboard = await bettingService.getLeaderboard(undefined, token);

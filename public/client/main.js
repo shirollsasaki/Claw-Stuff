@@ -119,6 +119,36 @@ resizeCanvas();
 // Retry once after layout (helps mobile when container size isn't ready yet)
 requestAnimationFrame(() => { requestAnimationFrame(resizeCanvas); });
 
+// Fetch betting config and toggle tab visibility
+async function initBettingConfig() {
+  try {
+    const res = await fetch('/api/status');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const status = await res.json();
+    const bettingEnabled = status.bettingEnabled ?? false;
+    
+    // Toggle BETS and TOKEN tabs visibility
+    const bettingTabs = document.querySelectorAll('[data-betting-tab="true"]');
+    bettingTabs.forEach(tab => {
+      if (bettingEnabled) {
+        tab.style.display = '';
+      } else {
+        tab.style.display = 'none';
+      }
+    });
+  } catch (err) {
+    console.error('Failed to fetch betting config:', err);
+    // Default to hiding betting tabs on error
+    const bettingTabs = document.querySelectorAll('[data-betting-tab="true"]');
+    bettingTabs.forEach(tab => {
+      tab.style.display = 'none';
+    });
+  }
+}
+
+// Initialize betting config on page load
+initBettingConfig();
+
 // Connect to server
 const socket = io();
 

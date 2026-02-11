@@ -1,58 +1,46 @@
 import { AgentInfo } from '../../shared/types.js';
 
-const MOLTBOOK_API_URL = 'https://www.moltbook.com/api/v1';
-
-// Cache verified agents for a short time to reduce API calls
+// Cache verified agents for a short time to reduce repeated parsing
 const agentCache = new Map<string, { info: AgentInfo; expiry: number }>();
 const CACHE_DURATION = 60 * 1000; // 1 minute
 
-export async function verifyMoltbookAgent(apiKey: string): Promise<AgentInfo | null> {
+export async function verifyAgentApiKey(apiKey: string): Promise<AgentInfo | null> {
   // Check cache first
   const cached = agentCache.get(apiKey);
   if (cached && cached.expiry > Date.now()) {
     return cached.info;
   }
 
-  try {
-    const response = await fetch(`${MOLTBOOK_API_URL}/agents/me`, {
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-      },
-    });
-
-    if (!response.ok) {
-      console.log(`Moltbook auth failed: ${response.status}`);
-      return null;
-    }
-
-    const data = await response.json();
-    
-    // Extract agent info from Moltbook response
-    const agentInfo: AgentInfo = {
-      name: data.name || data.agent?.name || 'Unknown Agent',
-      description: data.description || data.agent?.description,
-      moltbookId: data.id || data.agent?.id,
-    };
-
-    // Cache the result
-    agentCache.set(apiKey, {
-      info: agentInfo,
-      expiry: Date.now() + CACHE_DURATION,
-    });
-
-    return agentInfo;
-  } catch (error) {
-    console.error('Error verifying Moltbook agent:', error);
+  if (!/^ba_[A-Za-z0-9][A-Za-z0-9_-]*$/.test(apiKey)) {
     return null;
   }
+
+  const agentName = apiKey.slice(3);
+  if (!agentName) {
+    return null;
+  }
+
+  const agentInfo: AgentInfo = {
+    name: agentName,
+    description: undefined,
+    id: undefined,
+  };
+
+  // Cache the result
+  agentCache.set(apiKey, {
+    info: agentInfo,
+    expiry: Date.now() + CACHE_DURATION,
+  });
+
+  return agentInfo;
 }
 
-// For development/testing without Moltbook
+// For development/testing without production API keys
 export function createTestAgent(name: string): AgentInfo {
   return {
     name,
     description: 'Test agent',
-    moltbookId: `test_${Date.now()}`,
+    id: `test_${Date.now()}`,
   };
 }
 

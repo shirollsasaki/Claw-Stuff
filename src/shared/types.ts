@@ -62,7 +62,7 @@ export interface MatchResult {
 export interface AgentInfo {
   name: string;
   description?: string;
-  moltbookId?: string;
+  id?: string;
 }
 
 export interface Player {

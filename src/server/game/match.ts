@@ -11,6 +11,7 @@ import {
   TICK_INTERVAL,
 } from '../../shared/constants.js';
 import * as bettingService from '../betting/service.js';
+import { config } from '../config.js';
 
 // In local/test mode use 90s start cooldown; production uses LOBBY_DURATION (also 90s)
 const EFFECTIVE_LOBBY_DURATION = process.env.NODE_ENV === 'production' ? LOBBY_DURATION : 90 * 1000;
@@ -158,7 +159,9 @@ export class MatchManager {
       if (this.bettingOpenTimeout) clearTimeout(this.bettingOpenTimeout);
 
       // Update DB + emit immediately so the UI shows all agents right away
-      bettingService.openBettingForMatch(match.id, allAgentNames, false).catch(() => {});
+      if (config.bettingEnabled) {
+        bettingService.openBettingForMatch(match.id, allAgentNames, false).catch(() => {});
+      }
 
       this.bettingOpenTimeout = setTimeout(() => {
         this.bettingOpenTimeout = null;
@@ -171,11 +174,15 @@ export class MatchManager {
           return p?.agentInfo.name ?? s.name;
         });
         // Update DB with final list, then send single on-chain tx
-        bettingService.openBettingForMatch(finalMatch.id, finalNames, true).catch(() => {});
+        if (config.bettingEnabled) {
+          bettingService.openBettingForMatch(finalMatch.id, finalNames, true).catch(() => {});
+        }
       }, DEBOUNCE_MS);
     } else {
       // openBetting already sent on-chain – add this agent via addAgents
-      bettingService.addBettingAgent(match.id, allAgentNames[allAgentNames.length - 1]).catch(() => {});
+      if (config.bettingEnabled) {
+        bettingService.addBettingAgent(match.id, allAgentNames[allAgentNames.length - 1]).catch(() => {});
+      }
     }
   }
 
@@ -194,11 +201,15 @@ export class MatchManager {
         const p = this.players.get(s.id);
         return p?.agentInfo.name ?? s.name;
       });
-      bettingService.openBettingForMatch(match.id, allNames, true).catch(() => {});
+      if (config.bettingEnabled) {
+        bettingService.openBettingForMatch(match.id, allNames, true).catch(() => {});
+      }
     }
 
     // Close betting if it wasn't already closed by the early timeout
-    bettingService.closeBettingForMatch(match.id).catch(() => {});
+    if (config.bettingEnabled) {
+      bettingService.closeBettingForMatch(match.id).catch(() => {});
+    }
 
     if (this.bettingCloseTimeout) {
       clearTimeout(this.bettingCloseTimeout);
@@ -229,7 +240,7 @@ export class MatchManager {
     const finalScores = withSurvival.map(({ name, score, kills }) => ({ name, score, kills }));
     // Map display name -> canonical agent name for DB (leaderboard uses agent_name)
     const displayNameToAgent = new Map<string, string>();
-    // Also map canonical agent name -> Moltbook API key (for agent reward wallet lookup)
+    // Also map canonical agent name -> API key (for agent reward wallet lookup)
     const agentNameToApiKey = new Map<string, string>();
     for (const snake of match.snakes.values()) {
       const player = this.players.get(snake.id);
@@ -305,16 +316,21 @@ export class MatchManager {
     const winnerWalletPromises = winnerAgentNames.map(name => {
       const apiKey = agentNameToApiKey.get(name);
       if (!apiKey) return Promise.resolve(null);
-      return bettingService.getAgentWallet(name, apiKey).catch(() => null);
+      if (config.bettingEnabled) {
+        return bettingService.getAgentWallet(name, apiKey).catch(() => null);
+      }
+      return Promise.resolve(null);
     });
     Promise.all(winnerWalletPromises).then(wallets => {
-      const winnerAgentWallets = wallets.map(w => w || '0x0000000000000000000000000000000000000000');
-      bettingService.resolveMatchBetting({
-        matchId: match.id,
-        winnerAgentNames,
-        winnerAgentWallets,
-        isDraw,
-      }).catch(err => console.error('[MatchManager] resolveMatchBetting failed:', err));
+      if (config.bettingEnabled) {
+        const winnerAgentWallets = wallets.map(w => w || '0x0000000000000000000000000000000000000000');
+        bettingService.resolveMatchBetting({
+          matchId: match.id,
+          winnerAgentNames,
+          winnerAgentWallets,
+          isDraw,
+        }).catch(err => console.error('[MatchManager] resolveMatchBetting failed:', err));
+      }
     }).catch(() => {});
 
     // Notify spectators (include winner skin + survival time for display)
@@ -451,7 +467,9 @@ export class MatchManager {
         if (this.bettingCloseTimeout) clearTimeout(this.bettingCloseTimeout);
         this.bettingCloseTimeout = setTimeout(() => {
           const m = this.engine.getMatch();
-          if (m) bettingService.closeBettingForMatch(m.id).catch(() => {});
+          if (m && config.bettingEnabled) {
+            bettingService.closeBettingForMatch(m.id).catch(() => {});
+          }
         }, EFFECTIVE_LOBBY_DURATION - BETTING_CLOSE_BUFFER);
       }
 

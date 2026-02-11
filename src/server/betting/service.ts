@@ -815,7 +815,7 @@ export async function getLeaderboard(limit: number = 50, token?: Token): Promise
 /**
  * Register an agent's wallet address.
  *
- * Uses BOTH the agent's canonical name and its Moltbook API key to avoid
+ * Uses BOTH the agent's canonical name and its API key to avoid
  * collisions when multiple agents share the same display name.
  */
 export async function registerAgentWallet(agentName: string, apiKey: string, walletAddress: string) {
@@ -841,7 +841,7 @@ export async function registerAgentWallet(agentName: string, apiKey: string, wal
 /**
  * Get agent's registered wallet address.
  *
- * Uses BOTH the agent's canonical name and its Moltbook API key to avoid
+ * Uses BOTH the agent's canonical name and its API key to avoid
  * collisions when multiple agents share the same display name.
  */
 export async function getAgentWallet(agentName: string, apiKey: string): Promise<string | null> {

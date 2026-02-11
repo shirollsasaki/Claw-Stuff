@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { MatchManager } from '../game/match.js';
 import { getAgentSkins, getGlobalLeaderboard } from '../db.js';
-import { verifyMoltbookAgent, createTestAgent, checkRateLimit } from './auth.js';
+import { verifyAgentApiKey, createTestAgent, checkRateLimit } from './auth.js';
 import {
   JoinRequest,
   ActionRequest,
@@ -11,6 +11,7 @@ import { resolveSkinToParts, toStoredSkinId, SKIN_PRESETS, DEFAULT_SKIN_ID } fro
 import { getSkinOptions } from '../skinOptions.js';
 import { generateSnake, getSkinPartPaths } from '../snakeGenerator.js';
 import { ARENA_WIDTH, ARENA_HEIGHT, TICK_INTERVAL } from '../../shared/constants.js';
+import { config } from '../config.js';
 
 const DEV_MODE = process.env.NODE_ENV !== 'production';
 
@@ -29,34 +30,37 @@ export function createRoutes(matchManager: MatchManager): Router {
   // GET /api/status - No auth required
   router.get('/status', (req: Request, res: Response) => {
     const status = matchManager.getStatus();
-    res.json(status);
+    res.json({
+      ...status,
+      bettingEnabled: config.bettingEnabled,
+    });
   });
 
-  // POST /api/match/join - Requires Moltbook auth
+  // POST /api/match/join - Requires API key auth
   router.post('/match/join', async (req: Request, res: Response) => {
     const apiKey = extractApiKey(req);
     if (!apiKey) {
       res.status(401).json({
         success: false,
         error: 'UNAUTHORIZED',
-        message: 'Missing or invalid Authorization header. Use: Bearer YOUR_MOLTBOOK_API_KEY',
+        message: 'Missing or invalid Authorization header. Use: Bearer YOUR_BUILDER_ARENA_API_KEY',
       });
       return;
     }
 
-    // Verify with Moltbook (or use test mode in dev)
+    // Verify with Builder Arena API key format (or use test mode in dev)
     let agentInfo;
     if (DEV_MODE && apiKey.startsWith('test_')) {
       agentInfo = createTestAgent(apiKey.replace('test_', ''));
     } else {
-      agentInfo = await verifyMoltbookAgent(apiKey);
+      agentInfo = await verifyAgentApiKey(apiKey);
     }
 
     if (!agentInfo) {
       res.status(401).json({
         success: false,
         error: 'INVALID_API_KEY',
-        message: 'Invalid Moltbook API key. Register at https://www.moltbook.com',
+        message: 'Invalid Builder Arena API key. Use a key with ba_ prefix',
       });
       return;
     }
@@ -362,19 +366,19 @@ export function createRoutes(matchManager: MatchManager): Router {
       return;
     }
 
-    // Reuse Moltbook verification from join route
+    // Reuse API key verification from join route
     let agentInfo;
     if (DEV_MODE && apiKey.startsWith('test_')) {
       agentInfo = createTestAgent(apiKey.replace('test_', ''));
     } else {
-      agentInfo = await verifyMoltbookAgent(apiKey);
+      agentInfo = await verifyAgentApiKey(apiKey);
     }
 
     if (!agentInfo) {
       res.status(401).json({
         success: false,
         error: 'INVALID_API_KEY',
-        message: 'Invalid Moltbook API key. Register at https://www.moltbook.com',
+        message: 'Invalid Builder Arena API key. Use a key with ba_ prefix',
       });
       return;
     }
