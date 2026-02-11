@@ -153,6 +153,26 @@ httpServer.listen(PORT, () => {
   matchManager.start().catch((err) => {
     console.error('Failed to start match manager:', err);
   });
+
+  // Auto-spawn house bots if RUN_HOUSE_BOTS=true
+  if (process.env.RUN_HOUSE_BOTS === 'true') {
+    import('child_process').then(({ spawn }) => {
+      console.log('[house-bots] Starting house bots process...');
+      const houseBots = spawn('node', ['scripts/run-house-bots.js'], {
+        env: {
+          ...process.env,
+          BASE_URL: `http://localhost:${PORT}`,
+        },
+        stdio: 'inherit',
+      });
+      houseBots.on('error', (err) => {
+        console.error('[house-bots] Failed to start:', err);
+      });
+      houseBots.on('exit', (code) => {
+        console.log(`[house-bots] Process exited with code ${code}`);
+      });
+    });
+  }
 });
 
 // Graceful shutdown
