@@ -2,7 +2,7 @@
  * Claw IO – Betting / Prediction Market frontend logic.
  *
  * Handles:
- *  - MetaMask / injected wallet connection (Monad mainnet)
+ *  - MetaMask / injected wallet connection (Base mainnet)
  *  - Placing bets on-chain via ClawBetting contract
  *  - Real-time odds updates via WebSocket
  *  - Toast notifications
@@ -23,19 +23,20 @@ let currentMatchId = null;
 let currentBetToken = 'MON';     // 'MON' | 'MCLAW'
 
 // $MClawIO token (Monad) – same CA as TOKEN tab
-const MCLAW_TOKEN_ADDRESS = '0x26813a9B80f43f98cee9045B9f7CdcA816C57777';
+// COMMENTED OUT: ETH-only migration (Base chain)
+// const MCLAW_TOKEN_ADDRESS = '0x26813a9B80f43f98cee9045B9f7CdcA816C57777';
 
 const TOKEN_META = {
-  MON:   { symbol: 'MON' },
+  MON:   { symbol: 'ETH' },
   MCLAW: { symbol: 'MClawIO' },
 };
 
-const MONAD_MAINNET = {
-  chainId: '0x8f',            // 143
-  chainName: 'Monad',
-  rpcUrls: ['https://rpc.monad.xyz'],
-  nativeCurrency: { name: 'MON', symbol: 'MON', decimals: 18 },
-  blockExplorerUrls: ['https://monadvision.com'],
+const BASE_MAINNET = {
+  chainId: '0x2105',          // 8453
+  chainName: 'Base',
+  rpcUrls: ['https://mainnet.base.org'],
+  nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+  blockExplorerUrls: ['https://basescan.org'],
 };
 
 /* ================================================================
@@ -80,22 +81,22 @@ window.connectWallet = async function connectWallet() {
     const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
     walletAddress = accounts[0];
 
-    // Ensure correct chain
-    try {
-      await window.ethereum.request({
-        method: 'wallet_switchEthereumChain',
-        params: [{ chainId: MONAD_MAINNET.chainId }],
-      });
-    } catch (switchErr) {
-      if (switchErr.code === 4902) {
-        await window.ethereum.request({
-          method: 'wallet_addEthereumChain',
-          params: [MONAD_MAINNET],
-        });
-      } else {
-        throw switchErr;
-      }
-    }
+     // Ensure correct chain
+     try {
+       await window.ethereum.request({
+         method: 'wallet_switchEthereumChain',
+         params: [{ chainId: BASE_MAINNET.chainId }],
+       });
+     } catch (switchErr) {
+       if (switchErr.code === 4902) {
+         await window.ethereum.request({
+           method: 'wallet_addEthereumChain',
+           params: [BASE_MAINNET],
+         });
+       } else {
+         throw switchErr;
+       }
+     }
 
     // Set up ethers
     provider = new ethers.BrowserProvider(window.ethereum);
@@ -577,7 +578,7 @@ async function fetchMyBets(matchId) {
               <span class="text-xs font-black text-[#facc15] uppercase">${escHtml(b.agentName)}</span>
               <span class="text-xs text-slate-400 ml-2">${amtMON} ${tokenMeta.symbol}</span>
             </div>
-            ${b.txHash ? `<a href="https://monadvision.com/tx/${b.txHash}" target="_blank" class="text-[10px] text-[#22d3ee] font-mono hover:underline">${b.txHash.slice(0,8)}...</a>` : ''}
+            ${b.txHash ? `<a href="https://basescan.org/tx/${b.txHash}" target="_blank" class="text-[10px] text-[#22d3ee] font-mono hover:underline">${b.txHash.slice(0,8)}...</a>` : ''}
           </div>
         `;
       }).join('');

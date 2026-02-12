@@ -76,3 +76,45 @@ After deployment, verify:
 - Record URL in this notepad
 - Proceed to Task 6: Update Builder Arena frontend
 
+
+## Task: Preflight Validation & DB Migration
+
+### Contract Preflight Validation ✅ PASSED
+All three Base mainnet contract view calls returned expected values:
+
+1. **operator()** → `0xa701EF934E997829591Dce1891619010f03b3c08` ✅
+2. **treasury()** → `0xF51Fe86498b83538E902e160F2D80c34C7d6b816` ✅
+3. **minBetAmount()** → `10000000000000000` (1e16) ✅
+
+Contract address: `0x9daD403877C571404F4F9EAFED6C320E38e68e34`
+RPC endpoint: `https://mainnet.base.org`
+
+### Database Migration Status
+Migration script verified: `/tmp/claw-stuff/scripts/migrate.sql`
+- Creates 4 betting tables: betting_pools, bets, bet_settlements, betting_leaderboard
+- Idempotent (uses CREATE TABLE IF NOT EXISTS)
+- Includes wallet_address column on agents table
+
+**Blocker**: Railway authentication required
+- `railway login` requires interactive browser authentication
+- Cannot proceed without Railway CLI authentication or DATABASE_URL
+- Next step: User must authenticate with Railway and provide DATABASE_URL or run migration via Railway dashboard
+
+### Migration Execution Steps (when DATABASE_URL available)
+```bash
+# Option 1: Direct psql
+psql $DATABASE_URL -f /tmp/claw-stuff/scripts/migrate.sql
+
+# Option 2: Via npm script
+npm run migrate
+
+# Option 3: Via Railway CLI (after authentication)
+railway run npm run migrate
+```
+
+### Verification Command
+```bash
+psql $DATABASE_URL -c "\dt betting_*"
+```
+Should show: betting_pools, bets, bet_settlements, betting_leaderboard
+

@@ -21,28 +21,28 @@ async function initReown() {
       const { EthersAdapter } = await import('https://esm.sh/@reown/appkit-adapter-ethers@' + V);
       const { defineChain } = await import('https://esm.sh/viem@2');
 
-      // Monad Mainnet – same shape as shotgun-app (viem defineChain)
-      const monadMainnet = defineChain({
-        id: 143,
-        name: 'Monad',
-        nativeCurrency: { name: 'MON', symbol: 'MON', decimals: 18 },
-        rpcUrls: { default: { http: ['https://rpc.monad.xyz/'] } },
-        blockExplorers: {
-          default: { name: 'MonadVision', url: 'https://monadvision.com' },
-        },
-        testnet: false,
-      });
+       // Base Mainnet – same shape as shotgun-app (viem defineChain)
+       const baseMainnet = defineChain({
+         id: 8453,
+         name: 'Base',
+         nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+         rpcUrls: { default: { http: ['https://mainnet.base.org'] } },
+         blockExplorers: {
+           default: { name: 'Basescan', url: 'https://basescan.org' },
+         },
+         testnet: false,
+       });
 
-      const metadata = {
-        name: 'Claw IO',
-        description: 'Bet on AI agents in Claw IO',
-        url: window.location.origin,
-        icons: [],
-      };
+       const metadata = {
+         name: 'Claw IO',
+         description: 'Bet on AI agents in Claw IO',
+         url: window.location.origin,
+         icons: [],
+       };
 
-      const modal = createAppKit({
-        adapters: [new EthersAdapter()],
-        networks: [monadMainnet],
+       const modal = createAppKit({
+         adapters: [new EthersAdapter()],
+         networks: [baseMainnet],
         projectId,
         metadata,
         features: {
