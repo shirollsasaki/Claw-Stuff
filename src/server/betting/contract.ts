@@ -1,5 +1,5 @@
 /**
- * Ethers.js wrapper for the ClawBetting smart contract on Monad mainnet.
+ * Ethers.js wrapper for the ClawBetting smart contract on Base mainnet.
  * All write functions are called by the backend "operator" wallet.
  */
 import { ethers, JsonRpcProvider, Wallet, Contract, encodeBytes32String, decodeBytes32String } from 'ethers';
@@ -21,8 +21,8 @@ try {
 }
 
 // ── Config from env ────────────────────────────────────────────────────
-// Default to Monad mainnet RPC; can be overridden via MONAD_RPC_URL.
-const MONAD_RPC_URL = process.env.MONAD_RPC_URL || 'https://rpc.monad.xyz';
+// Default to Base mainnet RPC; can be overridden via BASE_RPC_URL.
+const BASE_RPC_URL = process.env.BASE_RPC_URL || 'https://mainnet.base.org';
 const OPERATOR_PRIVATE_KEY = process.env.OPERATOR_PRIVATE_KEY || '';
 const BETTING_CONTRACT_ADDRESS = process.env.BETTING_CONTRACT_ADDRESS || '';
 
@@ -40,7 +40,7 @@ function ensureInit() {
     return;
   }
 
-  provider = new JsonRpcProvider(MONAD_RPC_URL);
+   provider = new JsonRpcProvider(BASE_RPC_URL);
 
   // Read-only contract (for view calls even without operator key)
   readContract = new Contract(BETTING_CONTRACT_ADDRESS, CONTRACT_ABI, provider);
@@ -53,7 +53,7 @@ function ensureInit() {
     console.warn('[betting/contract] OPERATOR_PRIVATE_KEY not set – write ops disabled');
   }
 
-  console.log(`[betting/contract] Connected to ${MONAD_RPC_URL}, contract ${BETTING_CONTRACT_ADDRESS}`);
+   console.log(`[betting/contract] Connected to ${BASE_RPC_URL}, contract ${BETTING_CONTRACT_ADDRESS}`);
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────
@@ -83,13 +83,13 @@ export function getContractABI(): any[] {
 }
 
 export function getChainInfo() {
-  return {
-    chainId: 143,
-    rpcUrl: MONAD_RPC_URL,
-    explorer: 'https://monadvision.com',
-    currency: 'MON',
-  };
-}
+   return {
+     chainId: 8453,
+     rpcUrl: BASE_RPC_URL,
+     explorer: 'https://basescan.org',
+     currency: 'ETH',
+   };
+ }
 
 // ── Global tx mutex ─────────────────────────────────────────────────────
 // All operator txs must be serialized to avoid nonce collisions.

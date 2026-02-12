@@ -10,14 +10,14 @@ import * as chain from './contract.js';
 export type Token = 'MON' | 'MCLAW';
 
 export interface AgentOdds {
-  agentName: string;
-  pool: string;          // wei string
-  poolMON: string;       // human-readable MON
-  percentage: number;    // 0-100
-  multiplier: number;    // e.g. 2.4 = 2.4x return per 1 MON
-  bettorCount: number;
-  winRate?: number;      // historical win rate (0-1, e.g. 0.7 = 70%)
-}
+   agentName: string;
+   pool: string;          // wei string
+   poolMON: string;       // human-readable ETH
+   percentage: number;    // 0-100
+   multiplier: number;    // e.g. 2.4 = 2.4x return per 1 ETH
+   bettorCount: number;
+   winRate?: number;      // historical win rate (0-1, e.g. 0.7 = 70%)
+ }
 
 export interface BettingStatus {
   matchId: string;
@@ -166,9 +166,9 @@ export async function placeBet(opts: {
   bettorName: string | null;
   matchId: string;
   agentName: string;
-  amountWei: string;
-  token?: Token;      // MON (default) or MCLAW
-  txHash?: string;    // already have a tx hash (human placed directly)
+   amountWei: string;
+   token?: Token;      // ETH (default) or MCLAW
+   txHash?: string;    // already have a tx hash (human placed directly)
 }): Promise<{ success: boolean; txHash?: string; error?: string }> {
   const {
     bettorAddress,
@@ -388,7 +388,7 @@ export async function claimWinnings(
   bettorAddress: string,
   matchId: string,
 ): Promise<{ success: boolean; txHashMon?: string; txHashMclaw?: string; payoutMon?: string; payoutMclaw?: string; error?: string }> {
-  // Check claimable amounts from contract (MON and MCLAW)
+   // Check claimable amounts from contract (ETH and MCLAW)
   const { monAmount, mclawAmount } = await chain.getClaimableAmounts(matchId, bettorAddress);
   const hasMon = monAmount !== '0';
   const hasMclaw = mclawAmount !== '0';
@@ -400,7 +400,7 @@ export async function claimWinnings(
   let txHashMon: string | undefined;
   let txHashMclaw: string | undefined;
 
-  // Claim MON (via operator) if any
+   // Claim ETH (via operator) if any
   if (hasMon) {
     txHashMon = await chain.claimFor(bettorAddress, matchId) || undefined;
     if (txHashMon) {
