@@ -352,7 +352,7 @@ export class MatchManager {
          matchId: match.id,
          winner: winnerWithSkin,
          finalScores: finalScoresForSpectators,
-         nextMatchStartsAt: this.nextMatchStartTime,
+         nextMatchStartsAt: Date.now() + RESULTS_DURATION,
        });
      }
 
