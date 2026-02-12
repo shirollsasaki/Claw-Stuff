@@ -348,22 +348,25 @@ export class MatchManager {
           winnerWithSkin = { ...winnerWithSkin, bodyId: parts.bodyId, eyesId: parts.eyesId, mouthId: parts.mouthId };
         }
       }
-      this.onMatchEndCallback({
-        matchId: match.id,
-        winner: winnerWithSkin,
-        finalScores: finalScoresForSpectators,
-        nextMatchStartsAt: this.nextMatchStartTime,
-      });
-    }
+       this.onMatchEndCallback({
+         matchId: match.id,
+         winner: winnerWithSkin,
+         finalScores: finalScoresForSpectators,
+         nextMatchStartsAt: this.nextMatchStartTime,
+       });
+     }
 
-    // Schedule the next lobby to open after the results period
-    // This ensures we don't interrupt an active match with a new lobby
-    if (this.resultsTimeout) {
-      clearTimeout(this.resultsTimeout);
-    }
-    this.resultsTimeout = setTimeout(() => {
-      this.openLobby();
-    }, RESULTS_DURATION);
+     // Emit status immediately after match ends so spectators get fresh timing data
+     this.onStatusChangeCallback?.();
+
+     // Schedule the next lobby to open after the results period
+     // This ensures we don't interrupt an active match with a new lobby
+     if (this.resultsTimeout) {
+       clearTimeout(this.resultsTimeout);
+     }
+     this.resultsTimeout = setTimeout(() => {
+       this.openLobby();
+     }, RESULTS_DURATION);
   }
 
   // Player management
